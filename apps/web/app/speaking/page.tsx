@@ -1,27 +1,35 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { FeedbackSection } from "@/app/components/FeedbackSection";
 import { evaluateSpeaking } from "@/app/lib/api";
 import type { SpeakingEvaluateResponse } from "@/app/lib/types";
 
-import styles from "../page.module.css";
-
 export default function SpeakingPage() {
-  const [topic, setTopic] = useState("Describe your last weekend");
-  const [answer, setAnswer] = useState(
-    "Last weekend I go to the coffee with my friend. We talking about work and I feel very relax."
-  );
+  const [topic, setTopic] = useState("");
+  const [answer, setAnswer] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validation, setValidation] = useState<string | null>(null);
   const [result, setResult] = useState<SpeakingEvaluateResponse | null>(null);
-
-  const canSubmit = useMemo(() => topic.trim().length > 0 && answer.trim().length > 0, [topic, answer]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit || isLoading) return;
+    if (isLoading) return;
+
+    if (!topic.trim()) {
+      setValidation("Add a topic or question you want to answer.");
+      setError(null);
+      return;
+    }
+    if (!answer.trim()) {
+      setValidation("Write your answer first, then submit.");
+      setError(null);
+      return;
+    }
+
+    setValidation(null);
     setIsLoading(true);
     setError(null);
     try {
@@ -36,71 +44,101 @@ export default function SpeakingPage() {
     }
   }
 
+  const fieldClass =
+    "w-full rounded-control border border-border bg-card px-3 py-2.5 text-foreground outline-none ring-offset-background focus:ring-2 focus:ring-foreground/15";
+
   return (
-    <div className={styles.page}>
-      <div className={styles.main}>
-        <section className="card">
-          <div className="cardHeader">
-            <h1 className={styles.title}>Speaking Trainer</h1>
-            <p className="muted" style={{ marginTop: 6 }}>
-              Hello: Type your answer (simulate speaking). You’ll get corrections, a more natural version, and simple feedback.
+    <div className="flex flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+        <section className="rounded-card border border-border bg-card">
+          <div className="px-4 pb-0 pt-4">
+            <h1 className="font-sans text-[22px] font-bold tracking-tight text-foreground">Speaking Trainer</h1>
+            <p className="mt-1.5 text-sm text-muted">
+              Read the question, type what you would say out loud, and submit for corrections and feedback.
             </p>
           </div>
-          <div className="cardBody">
-            <form className={styles.grid} onSubmit={onSubmit}>
-              <div className="field">
-                <div className="label">Topic</div>
+          <div className="p-4">
+            <form className="grid gap-4" onSubmit={onSubmit}>
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] text-muted" htmlFor="speaking-topic">
+                  Topic or question
+                </label>
                 <input
-                  className="input"
+                  id="speaking-topic"
+                  className={fieldClass}
                   value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g., Describe a memorable trip"
+                  onChange={(e) => {
+                    setTopic(e.target.value);
+                    if (validation) setValidation(null);
+                  }}
+                  placeholder="e.g. Describe your last weekend"
+                  autoComplete="off"
                 />
               </div>
-              <div className="field">
-                <div className="label">Your answer</div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] text-muted" htmlFor="speaking-answer">
+                  Your answer
+                </label>
                 <textarea
-                  className="textarea"
+                  id="speaking-answer"
+                  className={`${fieldClass} min-h-40 resize-y`}
                   value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Type what you would say..."
+                  onChange={(e) => {
+                    setAnswer(e.target.value);
+                    if (validation) setValidation(null);
+                  }}
+                  placeholder="Type your answer as naturally as you can…"
+                  rows={8}
                 />
               </div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <button className="btn" disabled={!canSubmit || isLoading} type="submit">
-                  {isLoading ? "Evaluating..." : "Evaluate"}
+              <div className="flex flex-col gap-2.5">
+                <button
+                  className="inline-flex cursor-pointer items-center justify-center rounded-control border border-transparent bg-primary px-3.5 py-2.5 font-semibold text-primaryText disabled:cursor-not-allowed disabled:opacity-70"
+                  disabled={isLoading}
+                  type="submit"
+                >
+                  {isLoading ? "Checking…" : "Submit"}
                 </button>
-                <span className="muted" style={{ fontSize: 13 }}>
-                  Backend: <span style={{ fontFamily: "var(--font-geist-mono)" }}>/v1/speaking/evaluate</span>
-                </span>
+                {validation ? <p className="text-sm text-amber-700 dark:text-amber-400">{validation}</p> : null}
+                {error ? (
+                  <div className="rounded-control border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-400">
+                    {error}
+                  </div>
+                ) : null}
               </div>
-
-              {error ? <div className={styles.error}>{error}</div> : null}
             </form>
           </div>
         </section>
 
         {result ? (
-          <div className={styles.resultGrid}>
-            <section className="card">
-              <div className="cardHeader">
-                <h2 className="sectionTitle">Corrected version</h2>
+          <div className="flex flex-col gap-4">
+            <p className="mt-1 text-sm text-muted">
+              Read in order: what to fix, how a native might say it, then detailed notes.
+            </p>
+
+            <section className="rounded-card border border-border bg-card" aria-labelledby="corrected-heading">
+              <div className="px-4 pb-0 pt-4">
+                <h2 id="corrected-heading" className="m-0 font-sans text-base font-semibold text-foreground">
+                  Corrected version
+                </h2>
               </div>
-              <div className="cardBody">
-                <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{result.corrected_version}</p>
+              <div className="p-4">
+                <p className="whitespace-pre-wrap leading-relaxed text-foreground">{result.corrected_version}</p>
               </div>
             </section>
 
-            <section className="card">
-              <div className="cardHeader">
-                <h2 className="sectionTitle">Natural version</h2>
+            <section className="rounded-card border border-border bg-card" aria-labelledby="natural-heading">
+              <div className="px-4 pb-0 pt-4">
+                <h2 id="natural-heading" className="m-0 font-sans text-base font-semibold text-foreground">
+                  More natural version
+                </h2>
               </div>
-              <div className="cardBody">
-                <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{result.natural_version}</p>
+              <div className="p-4">
+                <p className="whitespace-pre-wrap leading-relaxed text-foreground">{result.natural_version}</p>
               </div>
             </section>
 
-            <div className={styles.twoCol}>
+            <div className="flex flex-col gap-3">
               <FeedbackSection
                 title="Grammar"
                 items={result.feedback.grammar_mistakes}
@@ -119,4 +157,3 @@ export default function SpeakingPage() {
     </div>
   );
 }
-
