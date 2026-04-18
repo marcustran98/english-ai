@@ -1,4 +1,4 @@
-import type { SpeakingEvaluateResponse } from "@/app/lib/types";
+import type { SpeakingEvaluateResponse, SpeakingPart } from "@/types/speaking";
 
 export function getApiBaseUrl(): string {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -8,11 +8,16 @@ export function getApiBaseUrl(): string {
 export async function evaluateSpeaking(input: {
   topic: string;
   answer: string;
+  part?: SpeakingPart;
 }): Promise<SpeakingEvaluateResponse> {
   const res = await fetch(`${getApiBaseUrl()}/v1/speaking/evaluate`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      topic: input.topic,
+      answer: input.answer,
+      part: input.part ?? "part1",
+    }),
   });
 
   if (!res.ok) {

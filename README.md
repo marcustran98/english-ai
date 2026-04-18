@@ -15,9 +15,13 @@ Monorepo MVP for an AI English learning app.
 ### Backend (`apps/api`)
 1. Copy env example:
    - `cp apps/api/.env.example apps/api/.env`
-2. Set:
-   - `OPENAI_API_KEY`
-   - optional: `OPENAI_MODEL` (default `gpt-4.1-mini`)
+2. Configure **one** LLM provider (precedence is automatic):
+   1. **OpenAI** — set `OPENAI_API_KEY` (optional `OPENAI_MODEL`, default `gpt-4.1-mini`).
+   2. Else **Azure OpenAI** — set `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, and either `AZURE_OPENAI_DEPLOYMENT_NAME` or `AZURE_OPENAI_MODEL`.
+   3. Else **Groq** — set `GROQ_API_KEY` (optional `GROQ_BASE_URL`, default `https://api.groq.com/openai/v1`; optional `GROQ_MODEL`, default `llama-3.3-70b-versatile`). Speaking evaluation uses **chat completions** on Groq’s OpenAI-compatible API.
+   4. Else **Grok (xAI)** — set `GROK_API_KEY` (optional `GROK_BASE_URL` / `GROK_MODEL`). Also uses **chat completions**.
+
+   Resolution is implemented in `apps/api/app/ai_provider_factory.py`.
 
 ### Frontend (`apps/web`)
 1. Copy env example:
@@ -59,9 +63,12 @@ Request:
 ```json
 {
   "topic": "Describe your last weekend",
-  "answer": "Last weekend I go to the coffee with my friend..."
+  "answer": "Last weekend I go to the coffee with my friend...",
+  "part": "part1"
 }
 ```
+
+`part` is optional (`part1` | `part2` | `part3` | `extra`, default `part1`). The question or cue card text lives in `topic` (up to 500 characters). `answer` is usually a speech-to-text transcript (up to 4000 characters).
 
 Response shape:
 ```json
@@ -79,7 +86,16 @@ Response shape:
     ],
     "vocabulary_improvements": [],
     "clarity_comments": []
-  }
+  },
+  "scores": {
+    "fluency": 6.5,
+    "pronunciation": 6.0,
+    "grammar": 6.5,
+    "vocabulary": 6.5,
+    "overall": 6.5
+  },
+  "sample_answer": "...",
+  "key_vocabulary": ["...", "..."]
 }
 ```
 

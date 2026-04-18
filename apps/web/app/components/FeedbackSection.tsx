@@ -1,4 +1,4 @@
-import type { FeedbackItem } from "@/app/lib/types";
+import type { FeedbackItem } from "@/types/speaking";
 
 function Item({ item }: { item: FeedbackItem }) {
   return (
