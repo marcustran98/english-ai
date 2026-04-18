@@ -14,6 +14,8 @@ def speaking_evaluate(payload: SpeakingEvaluateRequest) -> SpeakingEvaluateRespo
         return evaluate_speaking(payload)
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
-    except Exception:
-        raise HTTPException(status_code=500, detail="Evaluation failed")
+    except Exception as e:
+        message = str(e).strip()
+        suffix = f": {message}" if message else ""
+        raise HTTPException(status_code=500, detail=f"Evaluation failed ({type(e).__name__}){suffix}")
 

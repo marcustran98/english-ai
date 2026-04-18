@@ -1,0 +1,8 @@
+{
+  "venvPath": "apps/api",
+  "venv": ".venv",
+  "include": ["apps/api"],
+  "extraPaths": ["apps/api"],
+  "reportMissingImports": true
+}
+
